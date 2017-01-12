@@ -1,14 +1,17 @@
 library(dplyr)
 library(RSQLite)
 library(XML)
+library(data.table)
+library(tidyr)
 
 # Make a connection to the sqlite database.
-con <- dbConnect(SQLite(), dbname="PUT_DATABASE_NAME")
+con <- dbConnect(SQLite(), dbname="database.sqlite")
 dbListTables(con)
 
 # Extract matches data into a R readable dataframe. This data set contains all matches that have played in major leagues since the 2008/09 season
 matches <- tbl_df(dbGetQuery(con,
-                             "SELECT m.season, 
+                             "SELECT m.id, 
+                             m.season, 
                              m.date, 
                              t1.team_long_name as 'home',
                              t1.team_short_name as 'home_short', 
@@ -52,6 +55,14 @@ playername <- function(x) {
 
 goals <- data.frame()
 
+match_dt <- data.table(matches)
+match_dt <- match_dt %>%
+  select(id, season, goal)
+
+goals_dt <- match_dt[, list(goal = unlist(xmlToDataFrame(goal) %>% dplyr::select(comment, subtype, elapsed, player1, player2))), by = list(id, season)]
+
+View(unnest(match_dt, goal))
+
 for (goal in matches$goal) {
   add <- tryCatch({
     xmlToDataFrame(goal) %>%
@@ -77,3 +88,15 @@ goals$subtype[goals$comment == "o"] = "own-goal"
 goals$subtype[goals$comment == "rp"] = "retake-penalty"
 goals$subtype[goals$comment == "dg"] = "disallowed"
 goals$subtype[goals$comment == "psm"] = "penalty-missed"
+
+scorers <- goals %>%
+  select(scorer, subtype, elapsed)
+
+assisters <- goals %>%
+  select(assister, subtype, elapsed)
+
+
+scorers <- scorers %>%
+  group_by(scorer, subtype) %>%
+  summarise(goals = n())
+
