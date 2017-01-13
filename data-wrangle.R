@@ -55,6 +55,23 @@ playername <- function(x) {
 
 goals <- data.frame()
 
+matches <- matches %>%
+  select(id, season, goal) %>%
+  mutate(comment = list(xmlToDataFrame(goal) %>% select(comment))[[1]][[1]])
+
+v <- list(xmlToDataFrame(matches$goal[1])$comment)[[1]]
+u <- list(xmlToDataFrame(matches$goal[1]) %>% select(comment))[[1]][[1]]
+xmlToList(matches$goal[1])
+
+
+v = data_frame()
+for (value in xmlToDataFrame(matches$goal[1])) {
+  
+}
+
+test <- xmlToList(matches$goal[1])
+
+
 match_dt <- data.table(matches)
 match_dt <- match_dt %>%
   select(id, season, goal)
