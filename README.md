@@ -11,3 +11,5 @@ R codes for some football(soccer) analytics
 # Data
 
 The data for this analysis can be found [here](https://www.kaggle.com/hugomathien/soccer/downloads/database.sqlite.zip)!
+
+Make sure you unzip the sqlite file and then replace the name of the database in the R code in "data-wrangle.R" with "database.sqlite"
