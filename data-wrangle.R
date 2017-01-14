@@ -55,14 +55,78 @@ playername <- function(x) {
 
 goals <- data.frame()
 
-matches <- matches %>%
+
+matches_test <- as.data.table(matches) %>%
   select(id, season, goal) %>%
-  mutate(comment = list(xmlToDataFrame(goal) %>% select(comment))[[1]][[1]])
+  mutate(comment = extractComments(goal))
 
 v <- list(xmlToDataFrame(matches$goal[1])$comment)[[1]]
 u <- list(xmlToDataFrame(matches$goal[1]) %>% select(comment))[[1]][[1]]
 xmlToList(matches$goal[1])
 
+extractComments <- function(x) {
+  comments = list()
+  for (i in 1:length(x)) {
+    for(goal in x[i]) {
+      temp <- list(c(xpathApply(xmlParseDoc(goal), "//*/comment", xmlValue)))
+      comments <- temp
+    }
+    
+  }
+  return(comments)
+}
+
+extractComments(matches$goal[1:7])
+
+mybiglist <- list()
+for (i in 1:length(matches$goal[1:3])) {
+  temp <- list(c(xpathApply(xmlParseDoc(matches$goal[i]), "//*/comment", xmlValue)))
+  mybiglist <- c(mybiglist, temp)
+}
+
+mybiglist
+
+mybiglist <- list()
+for(i in 1:5){
+  a <- runif(10)
+  b <- rnorm(16)
+  c <- rbinom(8, 5, i/10)
+  # name <- paste('item:',i,sep='')
+  tmp <- list(a, b, c)
+  mybiglist <- tmp
+}
+
+mybiglist
+
+
+myDataFrame <- list
+
+test <- for (goal in matches$goal) {
+  tryCatch({
+    extractComments(goal)
+  }, error = function(e) {
+    NA
+  })
+}
+
+goal <- data.table()
+
+myDataFrame <- data.table(row = c(1,2,3,4))
+
+class(goal$comment)
+
+as.vector(xpathApply(xmlParseDoc(matches$goal[1]), "//*/comment", xmlValue))
+myDataFrame$comment <- c(xpathApply(xmlParseDoc(matches$goal[1]), "//*/comment", xmlValue))
+c(xpathApply(xmlParseDoc(matches$goal[1]), "//*/comment", xmlValue))
+
+goal$comment <- c(list(1,2))
+
+xmlParseDoc(matches$goal[1])
+matches$goal[1]
+
+xpathApply()
+
+extractComments(matches$goal)
 
 v = data_frame()
 for (value in xmlToDataFrame(matches$goal[1])) {
