@@ -53,122 +53,96 @@ playername <- function(x) {
   }))
 }
 
-goals <- data.frame()
 
-
-matches_test <- as.data.table(matches) %>%
-  select(id, season, goal) %>%
-  mutate(comment = extractComments(goal))
-
-v <- list(xmlToDataFrame(matches$goal[1])$comment)[[1]]
-u <- list(xmlToDataFrame(matches$goal[1]) %>% select(comment))[[1]][[1]]
-xmlToList(matches$goal[1])
+# extractComments <- function(x) {
+#   lapply(x, function(x) {
+#     return(as.vector(xpathApply(xmlParseDoc(x), "//*/comment", xmlValue)))
+#   })
+# }
 
 extractComments <- function(x) {
-  comments = list()
-  for (i in 1:length(x)) {
-    for(goal in x[i]) {
-      temp <- list(c(xpathApply(xmlParseDoc(goal), "//*/comment", xmlValue)))
-      comments <- temp
-    }
-    
-  }
-  return(comments)
-}
-
-extractComments(matches$goal[1:7])
-
-mybiglist <- list()
-for (i in 1:length(matches$goal[1:3])) {
-  temp <- list(c(xpathApply(xmlParseDoc(matches$goal[i]), "//*/comment", xmlValue)))
-  mybiglist <- c(mybiglist, temp)
-}
-
-mybiglist
-
-mybiglist <- list()
-for(i in 1:5){
-  a <- runif(10)
-  b <- rnorm(16)
-  c <- rbinom(8, 5, i/10)
-  # name <- paste('item:',i,sep='')
-  tmp <- list(a, b, c)
-  mybiglist <- tmp
-}
-
-mybiglist
-
-
-myDataFrame <- list
-
-test <- for (goal in matches$goal) {
-  tryCatch({
-    extractComments(goal)
-  }, error = function(e) {
-    NA
+  sapply(x, function(x) {
+    return(xmlToDataFrame(x)$comment)
   })
 }
 
-goal <- data.table()
+extractSubtypes <- function(x) {
+  sapply(x, function(x) {
+    return(xmlToDataFrame(x)$subtype)
+  })
+}
 
-myDataFrame <- data.table(row = c(1,2,3,4))
+extractElapsed <- function(x) {
+  sapply(x, function(x) {
+    return(xmlToDataFrame(x)$elapsed)
+  })
+}
 
-class(goal$comment)
+extractPlayer1 <- function(x) {
+  sapply(x, function(x) {
+    return(xmlToDataFrame(x)$player1)
+  })
+}
 
-as.vector(xpathApply(xmlParseDoc(matches$goal[1]), "//*/comment", xmlValue))
-myDataFrame$comment <- c(xpathApply(xmlParseDoc(matches$goal[1]), "//*/comment", xmlValue))
-c(xpathApply(xmlParseDoc(matches$goal[1]), "//*/comment", xmlValue))
+extractPlayer2 <- function(x) {
+  sapply(x, function(x) {
+    return(xmlToDataFrame(x)$player2)
+  })
+}
 
-goal$comment <- c(list(1,2))
+#TESTING  
 
-xmlParseDoc(matches$goal[1])
-matches$goal[1]
+# test_matches1 <- matches[2000:3040,] %>%
+#   select(id, season, goal) %>%
+#   mutate(comment = extractComments(goal),
+#          subtype = extractSubtypes(goal),
+#          elapsed = extractElapsed(goal),
+#          player1 = extractPlayer1(goal),
+#          player2 = extractPlayer2(goal)) %>%
+#   select(-goal)
+# 
+# test_matches1$subtype[test_matches1$subtype == "NULL"] = test_matches1$comment[test_matches1$subtype == "NULL"]
+# 
+# what <- test_matches1[1:15,] %>%
+#   filter(player1 != "NULL") %>%
+#   unnest(comment, subtype, elapsed, player1, player2)
 
-xpathApply()
-
-extractComments(matches$goal)
-
-v = data_frame()
-for (value in xmlToDataFrame(matches$goal[1])) {
+goals <- matches %>%
+  select(id, season, goal) %>%
+  mutate(comment = extractComments(goal),
+         subtype = extractSubtypes(goal),
+         elapsed = extractElapsed(goal),
+         player1 = extractPlayer1(goal),
+         player2 = extractPlayer2(goal)) %>%
+  select(-goal) %>%
+  filter(comment != "NULL", player1 != "NULL")
   
-}
 
-test <- xmlToList(matches$goal[1])
+goals$subtype[goals$subtype == "NULL"] = goals$comment[goals$subtype == "NULL"]
+goals$player2[goals$player2 == "NULL"] = goals$player1[goals$player2 == "NULL"]
 
-
-match_dt <- data.table(matches)
-match_dt <- match_dt %>%
-  select(id, season, goal)
-
-goals_dt <- match_dt[, list(goal = unlist(xmlToDataFrame(goal) %>% dplyr::select(comment, subtype, elapsed, player1, player2))), by = list(id, season)]
-
-View(unnest(match_dt, goal))
-
-for (goal in matches$goal) {
-  add <- tryCatch({
-    xmlToDataFrame(goal) %>%
-      dplyr::select(comment, subtype, elapsed, player1, player2)
-  }, error = function(e) {
-    data.frame(comment = NA, subtype = NA, elapsed = NA, player1 = NA, player2 = NA)
-  })
-  goals <- rbind(goals, add)
-  rm(add)
-}
-
-goals <- goals %>% 
-  mutate(scorer = playername(player1), assister = playername(player2)) %>%
-  dplyr::select(comment, subtype, elapsed, scorer, assister)
-
-goals$subtype = as.character(goals$subtype)
-goals$scorer = as.character(goals$scorer)
-goals$assister = as.character(goals$assister)
-goals <- data.frame(goals, stringsAsFactors = F)
+goals <- unnest(goals, comment, subtype, elapsed, player1, player2)
 
 goals$subtype[goals$comment == "p"] = "penalty"
 goals$subtype[goals$comment == "o"] = "own-goal"
 goals$subtype[goals$comment == "rp"] = "retake-penalty"
 goals$subtype[goals$comment == "dg"] = "disallowed"
 goals$subtype[goals$comment == "psm"] = "penalty-missed"
+
+
+goals_data <- goals %>% 
+  mutate(scorer = playername(player1), assister = playername(player2)) %>%
+  dplyr::select(id, season, comment, subtype, elapsed, scorer, assister)
+
+write.csv(goals, file = "goals.csv",row.names=FALSE, na="")
+          
+
+# goals$subtype = as.character(goals$subtype)
+# goals$scorer = as.character(goals$scorer)
+# goals$assister = as.character(goals$assister)
+# goals <- data.frame(goals, stringsAsFactors = F)
+
+
 
 scorers <- goals %>%
   select(scorer, subtype, elapsed)
