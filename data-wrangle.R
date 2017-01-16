@@ -129,11 +129,6 @@ goals$subtype[goals$comment == "rp"] = "retake-penalty"
 goals$subtype[goals$comment == "dg"] = "disallowed"
 goals$subtype[goals$comment == "psm"] = "penalty-missed"
 
-
-goals_data <- goals %>% 
-  mutate(scorer = playername(player1), assister = playername(player2)) %>%
-  dplyr::select(id, season, comment, subtype, elapsed, scorer, assister)
-
 write.csv(goals, file = "goals.csv",row.names=FALSE, na="")
           
 
@@ -143,15 +138,58 @@ write.csv(goals, file = "goals.csv",row.names=FALSE, na="")
 # goals <- data.frame(goals, stringsAsFactors = F)
 
 
+goals <- read.csv("footballR/goals.csv", stringsAsFactors = F)
+players <- tbl_df(dbGetQuery(con,
+                             "SELECT id, season, home_player_1, home_player_2, home_player_3, home_player_4,
+                              home_player_5, home_player_6, home_player_7, home_player_8, home_player_9, 
+                              home_player_10, home_player_11, away_player_1, away_player_2, away_player_3, 
+                              away_player_4, away_player_5, away_player_6, away_player_7, away_player_8, 
+                              away_player_9, away_player_10, away_player_11
+                              from MATCH
+                             WHERE league_id = 1729"
+))
 
-scorers <- goals %>%
-  select(scorer, subtype, elapsed)
+
+
+players <- players %>%
+  mutate(home_player_1 = playername(home_player_1),
+         home_player_2 = playername(home_player_2),
+         home_player_3 = playername(home_player_3),
+         home_player_4 = playername(home_player_4),
+         home_player_5 = playername(home_player_5),
+         home_player_6 = playername(home_player_6),
+         home_player_7 = playername(home_player_7),
+         home_player_8 = playername(home_player_8),
+         home_player_9 = playername(home_player_9),
+         home_player_10 = playername(home_player_10),
+         home_player_11 = playername(home_player_11),
+         away_player_1 = playername(away_player_1),
+         away_player_2 = playername(away_player_2),
+         away_player_3 = playername(away_player_3),
+         away_player_4 = playername(away_player_4),
+         away_player_5 = playername(away_player_5),
+         away_player_6 = playername(away_player_6),
+         away_player_7 = playername(away_player_7),
+         away_player_8 = playername(away_player_8),
+         away_player_9 = playername(away_player_9),
+         away_player_10 = playername(away_player_10),
+         away_player_11 = playername(away_player_11))
+         
+goals_data <- goals %>% 
+  mutate(scorer = as.character(playername(player1)), assister = as.character(playername(player2))) %>%
+  dplyr::select(id, season, comment, subtype, elapsed, scorer, assister)
+
+scorers <- goals_data%>%
+  select(scorer,subtype, elapsed, id, season)
+
+scorers$scorer = as.character(scorers$scorer)
+
+write.csv(goals_data, file = "goals_data.csv",row.names=FALSE, na="")
 
 assisters <- goals %>%
   select(assister, subtype, elapsed)
 
 
-scorers <- scorers %>%
-  group_by(scorer, subtype) %>%
-  summarise(goals = n())
-
+scorers_stats <- scorers %>%
+  group_by(scorer, subtype, season) %>%
+  summarise(goals = n(), appearances = sum(is.na(id/season) == F))
