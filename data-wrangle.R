@@ -179,12 +179,13 @@ goals_data <- goals %>%
   mutate(scorer = as.character(playername(player1)), assister = as.character(playername(player2))) %>%
   dplyr::select(id, season, comment, subtype, elapsed, scorer, assister)
 
+goals$season <- as.factor(goals$season)
 scorers <- goals_data%>%
   select(scorer,subtype, elapsed, id, season)
 
 scorers$scorer = as.character(scorers$scorer)
 
-write.csv(goals_data, file = "goals_data.csv",row.names=FALSE, na="")
+write.csv(goals_data, file = "footballR/goals_data.csv",row.names=FALSE, na="")
 
 assisters <- goals %>%
   select(assister, subtype, elapsed)
@@ -193,3 +194,23 @@ assisters <- goals %>%
 scorers_stats <- scorers %>%
   group_by(scorer, subtype, season) %>%
   summarise(goals = n(), appearances = sum(is.na(id/season) == F))
+
+
+appearances <- function(x, name) {
+  temp <- data.frame(season = factor(levels(goals$season)), appearances = numeric(0))
+  temp$appearances[temp$season == temp$season[1]]
+}
+
+test <- factor(levels(goals$season))
+
+test2 <- players %>%
+  filter(season == '2008/2009') %>%
+  select(home_player_1:away_player_11)
+
+sum(test2 == "Wayne Rooney")
+
+tbl_df(dbGetQuery(con,
+                  "SELECT id, season, home_player_1, home_player_X1, home_player_Y1
+                  from MATCH
+                  WHERE league_id = 1729"
+))
