@@ -185,7 +185,7 @@ scorers <- goals_data%>%
 
 scorers$scorer = as.character(scorers$scorer)
 
-write.csv(goals_data, file = "footballR/goals_data.csv",row.names=FALSE, na="")
+write.csv(goals, file = "footballR/goals_data.csv",row.names=FALSE, na="")
 
 assisters <- goals %>%
   select(assister, subtype, elapsed)
